@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
@@ -47,7 +48,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             @RequiresApi(api = Build.VERSION_CODES.O)
             @Override
             public void onClick(View v) {
-                lanzarNotificacion();
+                //lanzarNotificacion("Ejemplo de texto simple");
+                prueba("Ejemplo de texto simple");
             }
         });
         button2.setOnClickListener(new View.OnClickListener() {
@@ -68,6 +70,22 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 lanzarNotificacionConImagen();
             }
         });
+
+        onNewIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            if (extras.containsKey("mensaje1")) {
+                String msg = extras.getString("mensaje1");
+
+                //tvNotify.setText(msg) ;
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void lanzarNotificacionConImagen() {
@@ -211,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
 
-    private void lanzarNotificacion() {
+    private void lanzarNotificacion(String cadena) {
 
         //Id para la notificación
         int notifyId = 1;
@@ -225,9 +243,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         NotificationCompat.Builder builder =
                 new NotificationCompat.Builder(this, ID_CANAL)
                         .setSmallIcon(R.drawable.ic_launcher_background)
-                        .setContentTitle("Ejemplo de notificación simple")
+                        .setContentTitle("Notificación simple")
                         .setAutoCancel(true)
-                        .setContentText("Un texto simple de mi notificación")
+                        .setContentText(cadena)
                         .setContentIntent(pendingIntent2);
 
 
@@ -253,16 +271,49 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         builder.setContentIntent(pendingIntent);
 
+
         notificationManager.notify(notifyId, builder.build());
     }
+
+    private void prueba(String cadena) {
+
+        int notifyId = 1;
+
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("mensaje1", "Notificación simple");
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        PendingIntent resultIntent = PendingIntent.getActivity(MainActivity.this, 0, intent, 0);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder
+                (MainActivity.this, ID_CANAL)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle("Notificación simple")
+                .setContentText(cadena)
+                .setContentIntent(resultIntent);
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel notificationChannel = new
+                    NotificationChannel(ID_CANAL, "NOTIFICATION_CHANNEL_NAME", importance);
+            mBuilder.setChannelId(ID_CANAL);
+            assert mNotificationManager != null;
+            mNotificationManager.createNotificationChannel(notificationChannel);
+        }
+        assert mNotificationManager != null;
+        mNotificationManager.notify((int) System.currentTimeMillis(), mBuilder.build());
+
+    }
+
 
     @Override
     public void onSensorChanged(SensorEvent event) {
 
         if (event.sensor.getType() == Sensor.TYPE_LIGHT) {
             if (event.values[0] == 0) {
-                //Toast.makeText(this, "Luz 0", Toast.LENGTH_SHORT).show();
-                lanzarNotificacionConImagen();
+                lanzarNotificacion("Sensor de luz tapado");
 
             }
         }
